@@ -123,17 +123,24 @@ public class ShopSearchActivityStorageUtil {
      * @param shop
      */
     public void addShop(com.ghostchu.quickshop.api.shop.Shop shop) {
+        Location location = shop.bukkitLocation();
+
+        if (location == null || location.getWorld() == null) {
+            return;
+        }
+
         ShopSearchActivityModel shopModel = new ShopSearchActivityModel(
-                shop.getLocation().getWorld().getName(),
-                shop.getLocation().getX(),
-                shop.getLocation().getY(),
-                shop.getLocation().getZ(),
-                shop.getLocation().getPitch(),
-                shop.getLocation().getYaw(),
+                location.getWorld().getName(),
+                location.getX(),
+                location.getY(),
+                location.getZ(),
+                location.getPitch(),
+                location.getYaw(),
                 shop.getOwner().toString(),
                 new ArrayList<>(),
                 false
         );
+
         globalShopsList.add(shopModel);
     }
 

@@ -40,6 +40,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import com.ghostchu.quickshop.QuickShop;
+import com.ghostchu.quickshop.api.shop.Shop;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -73,7 +75,7 @@ public final class FindItemAddOn extends JavaPlugin {
     private static boolean isPluginOutdated = false;
     private static boolean qSReremakeInstalled = false;
     private static boolean qSHikariInstalled = false;
-    private static QSApi qsApi;
+    private static QSApi<QuickShop, Shop> qsApi;
 
     private static final HashMap<Player, PlayerMenuUtility> playerMenuUtilityMap = new HashMap<>();
 
@@ -354,7 +356,7 @@ public final class FindItemAddOn extends JavaPlugin {
         FindItemAddOn.qSHikariInstalled = qSHikariInstalled;
     }
 
-    public static QSApi getQsApiInstance() {
+    public static QSApi<QuickShop, Shop> getQsApiInstance() {
         return qsApi;
     }
 }

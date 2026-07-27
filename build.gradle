@@ -1,13 +1,13 @@
 plugins {
     id 'java'
-    id 'com.github.johnrengelman.shadow' version '8.1.1'
+    id 'com.gradleup.shadow' version '9.6.1'
 }
 
-archivesBaseName = 'PerchShopFinder'
+base {
+    archivesName = 'PerchShopFinder'
+}
 group = 'perch.finditem'
 version = '1.0.0'
-sourceCompatibility = '17'
-targetCompatibility = '17'
 
 repositories {
     mavenCentral()
@@ -64,12 +64,13 @@ dependencies {
     implementation "com.google.code.gson:gson:2.10"
     implementation "org.jetbrains:annotations:24.1.0"
     implementation "org.apache.commons:commons-lang3:3.14.0"
-    compileOnly "org.projectlombok:lombok:1.18.34"
-    annotationProcessor "org.projectlombok:lombok:1.18.34"
+    compileOnly "org.projectlombok:lombok:1.18.46"
+    annotationProcessor "org.projectlombok:lombok:1.18.46"
 
     // THIS is the file causing the conflict if the API block above is active.
     // Now that the block above is removed, Gradle will correctly use this file.
-    compileOnly files('lib/QuickShop-Hikari-6.2.0.11-RELEASE-CANDIDATE-2.jar')
+    // compileOnly files('lib/QuickShop-Hikari-6.2.0.11-RELEASE-CANDIDATE-2.jar')
+    compileOnly files('lib/QuickShop-Hikari-6.3.0.0-SNAPSHOT-11.jar')
 
     implementation "com.github.KodySimpson:SimpAPI:4.6.1"
     compileOnly "net.kyori:adventure-api:4.16.0"

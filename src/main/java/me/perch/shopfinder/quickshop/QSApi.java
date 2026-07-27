@@ -35,6 +35,8 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
 
 /**
  * Interface for QS API.
@@ -82,6 +84,8 @@ public interface QSApi<QSType, Shop> {
 
     List<Shop> getAllShops();
 
+    List<Shop> getAllShops(UUID ownerId);
+
     List<ShopSearchActivityModel> syncShopsListForStorage(List<ShopSearchActivityModel> globalShopsList);
 
     void registerSubCommand();
@@ -90,6 +94,22 @@ public interface QSApi<QSType, Shop> {
     boolean isQSShopCacheImplemented();
 
     int processUnknownStockSpace(Location shopLoc, boolean toBuy);
+
+    int getRemainingStockOrSpaceFromShopCache(
+            Shop shop,
+            boolean fetchRemainingStock
+    );
+
+    CompletableFuture<Integer> getRemainingStockOrSpaceFuture(
+            Shop shop,
+            boolean fetchRemainingStock
+    );
+
+    List<FoundShopItemModel> findItemsMatchingFromAllShops(
+            Predicate<ItemStack> itemMatcher,
+            boolean toBuy,
+            Player searchingPlayer
+    );
 
     static List<FoundShopItemModel> sortShops(int sortingMethod, List<FoundShopItemModel> shopsFoundList, boolean toBuy) {
         switch (sortingMethod) {

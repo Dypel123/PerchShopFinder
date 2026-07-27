@@ -29,6 +29,9 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.potion.PotionEffectType;
+import me.perch.shopfinder.utils.CustomItemMatchers;
+import com.ghostchu.quickshop.api.shop.Shop;
+import java.util.concurrent.CompletableFuture;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -768,48 +771,145 @@ public class CmdExecutorHandler {
     public void handleOutOfStockMenu(Player player) {
         if (!player.hasPermission(PlayerPermsEnum.FINDITEM_USE.value())) {
             player.sendMessage(ColorTranslator.translateColorCodes(
-                    FindItemAddOn.getConfigProvider().PLUGIN_PREFIX + "&cNo permission!"));
+                    FindItemAddOn.getConfigProvider().PLUGIN_PREFIX
+                            + "&cNo permission!"
+            ));
             return;
         }
 
-        if (!StringUtils.isEmpty(FindItemAddOn.getConfigProvider().SHOP_SEARCH_LOADING_MSG)) {
+        if (!StringUtils.isEmpty(
+                FindItemAddOn.getConfigProvider()
+                        .SHOP_SEARCH_LOADING_MSG
+        )) {
             player.sendMessage(ColorTranslator.translateColorCodes(
-                    FindItemAddOn.getConfigProvider().PLUGIN_PREFIX +
-                            FindItemAddOn.getConfigProvider().SHOP_SEARCH_LOADING_MSG));
+                    FindItemAddOn.getConfigProvider().PLUGIN_PREFIX
+                            + FindItemAddOn.getConfigProvider()
+                            .SHOP_SEARCH_LOADING_MSG
+            ));
         }
 
-        Bukkit.getScheduler().runTaskAsynchronously(FindItemAddOn.getInstance(), () -> {
-            List<com.ghostchu.quickshop.api.shop.Shop> allShops = FindItemAddOn.getQsApiInstance().getAllShops();
-            List<FoundShopItemModel> outOfStockModels = new ArrayList<>();
+        Bukkit.getScheduler().runTaskAsynchronously(
+                FindItemAddOn.getInstance(),
+                () -> {
+                    var qsApi = FindItemAddOn.getQsApiInstance();
 
-            for (com.ghostchu.quickshop.api.shop.Shop shop : allShops) {
-                if (FindItemAddOn.getQsApiInstance().isShopOwnerCommandRunner(player, shop)
-                        && shop.getRemainingStock() == 0) {
-                    outOfStockModels.add(new FoundShopItemModel(
-                            shop.getPrice(),
-                            shop.getRemainingStock(),
-                            shop.getOwner().getUniqueIdOptional().orElse(new UUID(0, 0)),
-                            shop.getLocation(),
-                            shop.getItem(),
-                            shop.isBuying()
-                    ));
+                    List<Shop> ownedShops =
+                            qsApi.getAllShops(player.getUniqueId());
+
+                    List<FoundShopItemModel> outOfStockModels =
+                            new ArrayList<>();
+
+                    final int batchSize = 16;
+
+                    for (int batchStart = 0;
+                         batchStart < ownedShops.size();
+                         batchStart += batchSize) {
+
+                        int batchEnd = Math.min(
+                                batchStart + batchSize,
+                                ownedShops.size()
+                        );
+
+                        List<Shop> shopsInBatch =
+                                ownedShops.subList(
+                                        batchStart,
+                                        batchEnd
+                                );
+
+                        List<CompletableFuture<Integer>> stockQueries =
+                                new ArrayList<>(shopsInBatch.size());
+
+                        for (Shop shop : shopsInBatch) {
+                            stockQueries.add(
+                                    qsApi.getRemainingStockOrSpaceFuture(
+                                            shop,
+                                            true
+                                    )
+                            );
+                        }
+
+                        // wait for the entire batch
+                        CompletableFuture<?>[] pendingQueries =
+                                stockQueries.toArray(
+                                        CompletableFuture<?>[]::new
+                                );
+
+                        CompletableFuture.allOf(
+                                pendingQueries
+                        ).join();
+
+                        for (int index = 0;
+                             index < shopsInBatch.size();
+                             index++) {
+
+                            int remainingStock =
+                                    stockQueries.get(index).join();
+
+                            // -1 = unlimited shop
+                            // -2 = unknown cached stock
+                            if (remainingStock != 0) {
+                                continue;
+                            }
+
+                            Shop shop = shopsInBatch.get(index);
+                            Location location =
+                                    shop.bukkitLocation();
+
+                            if (location == null
+                                    || location.getWorld() == null) {
+                                continue;
+                            }
+
+                            outOfStockModels.add(
+                                    new FoundShopItemModel(
+                                            shop.getPrice(),
+                                            remainingStock,
+                                            shop.getOwner()
+                                                    .getUniqueIdOptional()
+                                                    .orElse(
+                                                            new UUID(0, 0)
+                                                    ),
+                                            location,
+                                            shop.getItem(),
+                                            shop.isBuying()
+                                    )
+                            );
+                        }
+                    }
+
+                    outOfStockModels.sort(
+                            Comparator.comparing(
+                                            (FoundShopItemModel shop) ->
+                                                    getPotionEffectSortKey(
+                                                            shop.getItemStack()
+                                                    )
+                                    )
+                                    .thenComparing(shop -> {
+                                        ItemStack item =
+                                                shop.getItemStack();
+
+                                        return item != null
+                                                ? item.getType().name()
+                                                : "";
+                                    })
+                                    .thenComparingDouble(
+                                            FoundShopItemModel::getShopPrice
+                                    )
+                    );
+
+                    Bukkit.getScheduler().runTask(
+                            FindItemAddOn.getInstance(),
+                            () -> openShopMenu(
+                                    player,
+                                    outOfStockModels,
+                                    false,
+                                    "&cYou have no out-of-stock shops.",
+                                    "wtsmenu",
+                                    false
+                            )
+                    );
                 }
-            }
-
-            sortShopsByNearbyWarp(outOfStockModels, player);
-            outOfStockModels.sort(
-                    Comparator.comparing((FoundShopItemModel shop) -> getPotionEffectSortKey(shop.getItemStack()))
-                            .thenComparing(shop -> {
-                                ItemStack item = shop.getItemStack();
-                                return item != null ? item.getType().name() : "";
-                            })
-                            .thenComparingDouble(FoundShopItemModel::getShopPrice)
-            );
-
-            Bukkit.getScheduler().runTask(FindItemAddOn.getInstance(), () -> {
-                openShopMenu(player, outOfStockModels, false, "&cYou have no out-of-stock shops.", "wtsmenu", false);
-            });
-        });
+        );
     }
 
     public void handleShopSearchForUnbreakable(String buySellSubCommand, CommandSender commandSender) {
@@ -840,13 +940,13 @@ public class CmdExecutorHandler {
         String originCommand = isBuying ? "wtbmenu" : "wtsmenu";
 
         Runnable searchTask = () -> {
-            List<FoundShopItemModel> allItems = FindItemAddOn.getQsApiInstance().fetchAllItemsFromAllShops(isBuying, player);
-            List<FoundShopItemModel> unbreakableItems = allItems.stream()
-                    .filter(shopItem -> {
-                        ItemStack item = shopItem.getItemStack();
-                        return item != null && item.hasItemMeta() && item.getItemMeta().isUnbreakable();
-                    })
-                    .collect(Collectors.toList());
+            List<FoundShopItemModel> unbreakableItems =
+                    FindItemAddOn.getQsApiInstance()
+                            .findItemsMatchingFromAllShops(
+                                    CustomItemMatchers::isUnbreakable,
+                                    isBuying,
+                                    player
+                            );
 
             sortShopsByNearbyWarp(unbreakableItems, player);
             if (isBuying) {

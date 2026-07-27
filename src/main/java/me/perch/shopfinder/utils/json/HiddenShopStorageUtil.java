@@ -59,7 +59,7 @@ public class HiddenShopStorageUtil {
             int i = 0;
             while(shopSearchActivityIterator.hasNext()) {
                 ShopSearchActivityModel shopSearchActivity = shopSearchActivityIterator.next();
-                Location shopLocation = shop.getLocation();
+                Location shopLocation = shop.bukkitLocation();
                 if(shopSearchActivity.compareWith(
                         shopLocation.getWorld().getName(),
                         shopLocation.getX(),
@@ -83,7 +83,7 @@ public class HiddenShopStorageUtil {
      */
     public static boolean isShopHidden(com.ghostchu.quickshop.api.shop.Shop shop) {
         for(ShopSearchActivityModel shopSearchActivity : ShopSearchActivityStorageUtil.getGlobalShopsList()) {
-            Location shopLocation = shop.getLocation();
+            Location shopLocation = shop.bukkitLocation();
             if(shopSearchActivity.compareWith(
                     shopLocation.getWorld().getName(),
                     shopLocation.getX(),
