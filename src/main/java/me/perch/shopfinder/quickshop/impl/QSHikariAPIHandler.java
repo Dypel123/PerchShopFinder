@@ -426,22 +426,16 @@ public class QSHikariAPIHandler implements QSApi<QuickShop, Shop> {
         return (fetchRemainingStock ? cachedShop.getRemainingStock() : cachedShop.getRemainingSpace());
     }
 
+    @Override
     public CompletableFuture<Integer> getRemainingStockOrSpaceFuture(
             Shop shop,
             boolean fetchRemainingStock
     ) {
         Util.ensureThread(true);
 
+        // QuickShop uses -1 for unlimited/admin shops.
         if (shop.isUnlimited()) {
             return CompletableFuture.completedFuture(-1);
-        }
-
-        if (api.getShopManager().getLoadedShops().contains(shop)) {
-            int value = fetchRemainingStock
-                    ? shop.getRemainingStock()
-                    : shop.getRemainingSpace();
-
-            return CompletableFuture.completedFuture(value);
         }
 
         try {
@@ -458,7 +452,8 @@ public class QSHikariAPIHandler implements QSApi<QuickShop, Shop> {
                             return -2;
                         }
 
-                        if (!inventoryCache.initialized()) {
+                        if (inventoryCache == null
+                                || !inventoryCache.initialized()) {
                             return -2;
                         }
 
