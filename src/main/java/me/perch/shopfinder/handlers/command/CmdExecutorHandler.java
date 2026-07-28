@@ -793,8 +793,11 @@ public class CmdExecutorHandler {
                 () -> {
                     var qsApi = FindItemAddOn.getQsApiInstance();
 
-                    List<Shop> ownedShops =
-                            qsApi.getAllShops(player.getUniqueId());
+                    List<Shop> ownedSellingShops =
+                            qsApi.getAllShops(player.getUniqueId())
+                                    .stream()
+                                    .filter(Shop::isSelling)
+                                    .toList();
 
                     List<FoundShopItemModel> outOfStockModels =
                             new ArrayList<>();
@@ -802,16 +805,16 @@ public class CmdExecutorHandler {
                     final int batchSize = 16;
 
                     for (int batchStart = 0;
-                         batchStart < ownedShops.size();
+                         batchStart < ownedSellingShops.size();
                          batchStart += batchSize) {
 
                         int batchEnd = Math.min(
                                 batchStart + batchSize,
-                                ownedShops.size()
+                                ownedSellingShops.size()
                         );
 
                         List<Shop> shopsInBatch =
-                                ownedShops.subList(
+                                ownedSellingShops.subList(
                                         batchStart,
                                         batchEnd
                                 );
@@ -871,7 +874,7 @@ public class CmdExecutorHandler {
                                                     ),
                                             location,
                                             shop.getItem(),
-                                            shop.isBuying()
+                                            true
                                     )
                             );
                         }

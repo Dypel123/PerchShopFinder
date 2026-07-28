@@ -69,26 +69,24 @@ public class QSHikariAPIHandler implements QSApi<QuickShop, Shop> {
         return shop.bukkitLocation();
     }
 
-    public List<FoundShopItemModel> findItemBasedOnTypeFromAllShops(ItemStack item, boolean toBuy, Player searchingPlayer) {
-        var begin = Instant.now();
-        List<FoundShopItemModel> shopsFoundList = new ArrayList<>();
-        List<Shop> allShops = fetchAllShopsFromQS();
-        for (Shop shopIterator : allShops) {
-            // USE SAFE LOCATION GETTER
-            Location loc = getShopLocationSafe(shopIterator);
-            if (loc == null || loc.getWorld() == null) continue;
-
-            if (shopIterator.playerAuthorize(searchingPlayer.getUniqueId(), BuiltInShopPermission.SEARCH)
-                    && (!FindItemAddOn.getConfigProvider().getBlacklistedWorlds().contains(loc.getWorld())
-                    && shopIterator.getItem().getType().equals(item.getType())
-                    && (toBuy ? shopIterator.isSelling() : shopIterator.isBuying()))
-                    && (!HiddenShopStorageUtil.isShopHidden(shopIterator))) {
-                processPotentialShopMatchAndAddToFoundList(toBuy, shopIterator, shopsFoundList, searchingPlayer);
-            }
+    @Override
+    public List<FoundShopItemModel> findItemBasedOnTypeFromAllShops(
+            ItemStack item,
+            boolean toBuy,
+            Player searchingPlayer
+    ) {
+        if (item == null) {
+            return new ArrayList<>();
         }
-        List<FoundShopItemModel> sortedShops = handleShopSorting(toBuy, shopsFoundList);
-        QSApi.logTimeTookMsg(begin);
-        return sortedShops;
+
+        Material searchedMaterial = item.getType();
+
+        return findItemsMatchingFromAllShops(
+                shopItem -> shopItem != null
+                        && shopItem.getType() == searchedMaterial,
+                toBuy,
+                searchingPlayer
+        );
     }
 
     @Override
@@ -102,13 +100,13 @@ public class QSHikariAPIHandler implements QSApi<QuickShop, Shop> {
         List<Shop> matchingShops = new ArrayList<>();
 
         for (Shop shop : fetchAllShopsFromQS()) {
-            ItemStack shopItem = shop.getItem();
-
-            if (!itemMatcher.test(shopItem)) {
+            if (toBuy ? !shop.isSelling() : !shop.isBuying()) {
                 continue;
             }
 
-            if (toBuy ? !shop.isSelling() : !shop.isBuying()) {
+            ItemStack shopItem = shop.getItem();
+
+            if (!itemMatcher.test(shopItem)) {
                 continue;
             }
 
@@ -164,12 +162,11 @@ public class QSHikariAPIHandler implements QSApi<QuickShop, Shop> {
             );
         }
 
-        if (!results.isEmpty()) {
-            QSApi.sortShops(1, results, toBuy);
-        }
+        List<FoundShopItemModel> sortedResults =
+                handleShopSorting(toBuy, results);
 
         QSApi.logTimeTookMsg(begin);
-        return results;
+        return sortedResults;
     }
 
     private static boolean isOwnerHavingEnoughBalance(@NotNull Shop shop) {

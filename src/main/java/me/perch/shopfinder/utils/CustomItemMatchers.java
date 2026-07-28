@@ -6,13 +6,27 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.NamespacedKey;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 
+import java.util.Objects;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
 public final class CustomItemMatchers {
+
+    private static final NamespacedKey CRAZY_VOUCHER_ITEM =
+            Objects.requireNonNull(NamespacedKey.fromString(
+                    "crazyvouchers:crazyvouchers_voucher_item"
+            ));
+
+    private static final NamespacedKey PERCH_TRACKER_ID =
+            Objects.requireNonNull(NamespacedKey.fromString(
+                    "perchtrackers:tracker_id"
+            ));
 
     private static final Set<Material> POTION_MATERIALS = EnumSet.of(
             Material.POTION,
@@ -38,6 +52,88 @@ public final class CustomItemMatchers {
         return item != null
                 && item.hasItemMeta()
                 && item.getItemMeta().isUnbreakable();
+    }
+
+    public static boolean isVoucher(ItemStack item) {
+        if (item == null || !item.hasItemMeta()) {
+            return false;
+        }
+
+        PersistentDataContainer data =
+                item.getItemMeta().getPersistentDataContainer();
+
+        String voucherItem = data.get(
+                CRAZY_VOUCHER_ITEM,
+                PersistentDataType.STRING
+        );
+
+        return voucherItem != null
+                && !voucherItem.toLowerCase(Locale.ROOT)
+                .startsWith("randomtracker");
+    }
+
+    public static boolean isTracker(ItemStack item) {
+        if (item == null || !item.hasItemMeta()) {
+            return false;
+        }
+
+        PersistentDataContainer data =
+                item.getItemMeta().getPersistentDataContainer();
+
+        // A tracker item itself.
+        String trackerId = data.get(
+                PERCH_TRACKER_ID,
+                PersistentDataType.STRING
+        );
+
+        if (trackerId != null) {
+            return true;
+        }
+
+        // A CrazyVouchers item which gives a random tracker.
+        String voucherItem = data.get(
+                CRAZY_VOUCHER_ITEM,
+                PersistentDataType.STRING
+        );
+
+        return voucherItem != null
+                && voucherItem.toLowerCase(Locale.ROOT)
+                .startsWith("randomtracker");
+    }
+
+    public static boolean isTagItem(ItemStack item) {
+        if (item == null || !item.hasItemMeta()) {
+            return false;
+        }
+
+        var meta = item.getItemMeta();
+
+        // A renamed Minecraft name tag.
+        if (item.getType() == Material.NAME_TAG
+                && meta.hasDisplayName()) {
+            return true;
+        }
+
+        // A CrazyVouchers voucher that gives a tag.
+        String voucherItem = meta.getPersistentDataContainer().get(
+                CRAZY_VOUCHER_ITEM,
+                PersistentDataType.STRING
+        );
+
+        return voucherItem != null
+                && voucherItem.toLowerCase(Locale.ROOT)
+                .startsWith("tag");
+    }
+
+    public static boolean isShulkerBox(ItemStack item) {
+        if (item == null) {
+            return false;
+        }
+
+        Material material = item.getType();
+
+        return material == Material.SHULKER_BOX
+                || material.name().endsWith("_SHULKER_BOX");
     }
 
     public static boolean loreContains(

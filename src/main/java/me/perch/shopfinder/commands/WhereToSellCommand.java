@@ -182,6 +182,38 @@ public class WhereToSellCommand implements CommandExecutor {
                 singleItem = singleItem.trim();
                 if (singleItem.isEmpty()) continue;
 
+                if (singleItem.equalsIgnoreCase("voucher")
+                        || singleItem.equalsIgnoreCase("vouchers")) {
+                    result.anyValid = true;
+
+                    result.allResults.addAll(
+                            FindItemAddOn.getQsApiInstance()
+                                    .findItemsMatchingFromAllShops(
+                                            CustomItemMatchers::isVoucher,
+                                            !isSelling,
+                                            player
+                                    )
+                    );
+
+                    continue;
+                }
+
+                if (singleItem.equalsIgnoreCase("tracker")
+                        || singleItem.equalsIgnoreCase("trackers")) {
+                    result.anyValid = true;
+
+                    result.allResults.addAll(
+                            FindItemAddOn.getQsApiInstance()
+                                    .findItemsMatchingFromAllShops(
+                                            CustomItemMatchers::isTracker,
+                                            !isSelling,
+                                            player
+                                    )
+                    );
+
+                    continue;
+                }
+
                 if (singleItem.equalsIgnoreCase("mob_egg")) {
                     result.anyValid = true;
                     Material brownEgg = Material.getMaterial("BROWN_EGG");
@@ -275,39 +307,37 @@ public class WhereToSellCommand implements CommandExecutor {
                     continue;
                 }
 
-                if (singleItem.equalsIgnoreCase("tags") || singleItem.equalsIgnoreCase("tag")) {
+                if (singleItem.equalsIgnoreCase("tags")
+                        || singleItem.equalsIgnoreCase("tag")) {
                     result.anyValid = true;
-                    List<FoundShopItemModel> allNameTags = (List<FoundShopItemModel>) FindItemAddOn.getQsApiInstance()
-                            .findItemBasedOnTypeFromAllShops(new ItemStack(Material.NAME_TAG), !isSelling, player);
 
-                    List<FoundShopItemModel> renamedTags = allNameTags.stream()
-                            .filter(shopItem -> {
-                                ItemStack item = shopItem.getItemStack();
-                                return item != null && item.getType() == Material.NAME_TAG && item.hasItemMeta() && item.getItemMeta().hasDisplayName();
-                            })
-                            .collect(Collectors.toList());
+                    result.allResults.addAll(
+                            FindItemAddOn.getQsApiInstance()
+                                    .findItemsMatchingFromAllShops(
+                                            CustomItemMatchers::isTagItem,
+                                            !isSelling,
+                                            player
+                                    )
+                    );
 
-                    result.allResults.addAll(renamedTags);
                     continue;
                 }
 
                 if (singleItem.equalsIgnoreCase("shulker_box")) {
                     result.anyValid = true;
-                    List<Material> shulkerVariants = Arrays.stream(Material.values())
-                            .filter(m -> m.name().endsWith("_SHULKER_BOX"))
-                            .collect(Collectors.toList());
 
-                    if (!shulkerVariants.contains(Material.SHULKER_BOX)) {
-                        shulkerVariants.add(Material.SHULKER_BOX);
-                    }
+                    result.allResults.addAll(
+                            FindItemAddOn.getQsApiInstance()
+                                    .findItemsMatchingFromAllShops(
+                                            CustomItemMatchers::isShulkerBox,
+                                            !isSelling,
+                                            player
+                                    )
+                    );
 
-                    for (Material variant : shulkerVariants) {
-                        List<FoundShopItemModel> variantMatches = (List<FoundShopItemModel>) FindItemAddOn.getQsApiInstance()
-                                .findItemBasedOnTypeFromAllShops(new ItemStack(variant), !isSelling, player);
-                        result.allResults.addAll(variantMatches);
-                    }
                     continue;
                 }
+
                 if (singleItem.equalsIgnoreCase("banner")) {
                     result.anyValid = true;
 
