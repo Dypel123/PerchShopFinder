@@ -9,6 +9,8 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.NamespacedKey;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.block.ShulkerBox;
+import org.bukkit.inventory.meta.BlockStateMeta;
 
 import java.util.Objects;
 import java.util.EnumSet;
@@ -134,6 +136,52 @@ public final class CustomItemMatchers {
 
         return material == Material.SHULKER_BOX
                 || material.name().endsWith("_SHULKER_BOX");
+    }
+
+    public static boolean isFullShulkerOfMaterial(
+            ItemStack item,
+            Material expectedMaterial
+    ) {
+        if (!isShulkerBox(item)
+                || expectedMaterial == null
+                || !item.hasItemMeta()) {
+            return false;
+        }
+
+        if (!(item.getItemMeta() instanceof BlockStateMeta blockStateMeta)
+                || !blockStateMeta.hasBlockState()) {
+            return false;
+        }
+
+        if (!(blockStateMeta.getBlockState()
+                instanceof ShulkerBox shulkerBox)) {
+            return false;
+        }
+
+        ItemStack[] contents = shulkerBox
+                .getSnapshotInventory()
+                .getStorageContents();
+
+        // A standard shulker must contain all 27 storage slots.
+        if (contents.length != 27) {
+            return false;
+        }
+
+        for (ItemStack content : contents) {
+            if (content == null
+                    || content.getType() == Material.AIR
+                    || content.getType() != expectedMaterial) {
+                return false;
+            }
+
+            // Respects 64-stack, 16-stack, unstackable and
+            // custom maximum-stack-size items.
+            if (content.getAmount() != content.getMaxStackSize()) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public static boolean loreContains(

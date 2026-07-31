@@ -27,6 +27,7 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
+import me.perch.shopfinder.utils.CustomItemMatchers;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -83,7 +84,13 @@ public class QSHikariAPIHandler implements QSApi<QuickShop, Shop> {
 
         return findItemsMatchingFromAllShops(
                 shopItem -> shopItem != null
-                        && shopItem.getType() == searchedMaterial,
+                        && (
+                        shopItem.getType() == searchedMaterial
+                                || CustomItemMatchers.isFullShulkerOfMaterial(
+                                shopItem,
+                                searchedMaterial
+                        )
+                ),
                 toBuy,
                 searchingPlayer
         );
