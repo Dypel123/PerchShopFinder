@@ -360,8 +360,11 @@ public class WhereToSellCommand implements CommandExecutor {
 
                 // Check for aliases (BOOK_AND_QUILL -> WRITABLE_BOOK)
                 String potentialMatName = singleItem.toUpperCase(Locale.ROOT);
-                if (potentialMatName.equals("BOOK_AND_QUILL") || potentialMatName.equals("BOOKANDQUILL")) {
+                if (potentialMatName.equals("BOOK_AND_QUILL")
+                        || potentialMatName.equals("BOOKANDQUILL")) {
                     potentialMatName = "WRITABLE_BOOK";
+                } else if (potentialMatName.equals("BOTTLE_O'_ENCHANTING")) {
+                    potentialMatName = "EXPERIENCE_BOTTLE";
                 }
 
                 Material mat = Material.getMaterial(potentialMatName);

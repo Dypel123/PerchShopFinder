@@ -219,6 +219,7 @@ public class ShopSearchTabCompleter implements TabCompleter {
         if ("mapart".startsWith(toComplete)) completions.add("mapart");
         if ("banner".startsWith(toComplete)) completions.add("banner");
         if ("mob_egg".startsWith(toComplete)) completions.add("mob_egg");
+        if ("bottle_o'_enchanting".startsWith(toComplete)) completions.add("BOTTLE_O'_ENCHANTING");
 
         // Aliases for Writable Book
         if ("book_and_quill".startsWith(toComplete)) completions.add("book_and_quill");
