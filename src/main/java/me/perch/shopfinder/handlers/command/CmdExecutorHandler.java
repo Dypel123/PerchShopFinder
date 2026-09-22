@@ -32,6 +32,7 @@ import org.bukkit.potion.PotionEffectType;
 import me.perch.shopfinder.utils.CustomItemMatchers;
 import com.ghostchu.quickshop.api.shop.Shop;
 import java.util.concurrent.CompletableFuture;
+import me.perch.shopfinder.utils.PlayerShopRandomizer;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -507,12 +508,30 @@ public class CmdExecutorHandler {
                 finalList = new ArrayList<>();
 
                 if (isBuying) {
-                    List<Material> types = new ArrayList<>(grouped.keySet());
-                    Collections.shuffle(types);
+                    long randomizationSeed =
+                            PlayerShopRandomizer.getCurrentSeed(
+                                    player.getUniqueId()
+                            );
+
+                    List<Material> types =
+                            new ArrayList<>(grouped.keySet());
+
+                    PlayerShopRandomizer.sortMaterials(
+                            types,
+                            randomizationSeed,
+                            "wtb-material-groups"
+                    );
 
                     for (Material type : types) {
-                        List<FoundShopItemModel> shops = grouped.get(type);
-                        Collections.shuffle(shops);
+                        List<FoundShopItemModel> shops =
+                                grouped.get(type);
+
+                        PlayerShopRandomizer.sortShops(
+                                shops,
+                                randomizationSeed,
+                                "wtb-shops-" + type.name()
+                        );
+
                         finalList.addAll(shops);
                     }
                 } else {
@@ -563,11 +582,22 @@ public class CmdExecutorHandler {
             Map<Double, List<FoundShopItemModel>> priceGroups = searchResultList.stream()
                     .collect(java.util.stream.Collectors.groupingBy(FoundShopItemModel::getShopPrice));
             List<FoundShopItemModel> sortedAndRandomizedList = new ArrayList<>();
+            long randomizationSeed =
+                    PlayerShopRandomizer.getCurrentSeed(
+                            player.getUniqueId()
+                    );
             priceGroups.entrySet().stream()
                     .sorted(Map.Entry.<Double, List<FoundShopItemModel>>comparingByKey().reversed())
                     .forEach(entry -> {
-                        List<FoundShopItemModel> group = new ArrayList<>(entry.getValue());
-                        java.util.Collections.shuffle(group);
+                        List<FoundShopItemModel> group =
+                                new ArrayList<>(entry.getValue());
+
+                        PlayerShopRandomizer.sortShops(
+                                group,
+                                randomizationSeed,
+                                "wts-price-" + entry.getKey()
+                        );
+
                         sortedAndRandomizedList.addAll(group);
                     });
 

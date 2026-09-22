@@ -70,15 +70,18 @@ public class FoundShopsMenu extends PaginatedMenu {
         configProvider = FindItemAddOn.getConfigProvider();
         this.isBuying = isBuying;
 
-        List<FoundShopItemModel> list = super.playerMenuUtility.getPlayerShopSearchResult();
-        if (list != null && !list.isEmpty()) {
-            // 1. Always shuffle first to ensure ties are completely randomized
-            Collections.shuffle(list);
+        List<FoundShopItemModel> list =
+                super.playerMenuUtility.getPlayerShopSearchResult();
 
-            // 2. ONLY if this is the /wts menu (selling), sort by price descending
-            if (!isBuying) {
-                list.sort((s1, s2) -> Double.compare(s2.getShopPrice(), s1.getShopPrice()));
-            }
+        if (list != null && !list.isEmpty() && !isBuying) {
+            // Java's stable sort preserves the randomized order
+            // between shops having the same price.
+            list.sort(
+                    (first, second) -> Double.compare(
+                            second.getShopPrice(),
+                            first.getShopPrice()
+                    )
+            );
         }
     }
 

@@ -30,6 +30,11 @@ public final class CustomItemMatchers {
                     "perchtrackers:tracker_id"
             ));
 
+    private static final NamespacedKey PERCH_VOUCHER_ITEM_TYPE =
+            Objects.requireNonNull(NamespacedKey.fromString(
+                    "perchvouchers:itemtype"
+            ));
+
     private static final Set<Material> POTION_MATERIALS = EnumSet.of(
             Material.POTION,
             Material.SPLASH_POTION,
@@ -64,14 +69,37 @@ public final class CustomItemMatchers {
         PersistentDataContainer data =
                 item.getItemMeta().getPersistentDataContainer();
 
+        if (data.has(PERCH_VOUCHER_ITEM_TYPE)) {
+            return true;
+        }
+
         String voucherItem = data.get(
                 CRAZY_VOUCHER_ITEM,
                 PersistentDataType.STRING
         );
 
-        return voucherItem != null
-                && !voucherItem.toLowerCase(Locale.ROOT)
-                .startsWith("randomtracker");
+        if (voucherItem == null) {
+            return false;
+        }
+
+        String normalizedVoucherItem =
+                voucherItem.toLowerCase(Locale.ROOT);
+
+        if (normalizedVoucherItem.startsWith("randomtracker")) {
+            return false;
+        }
+
+        // Tag_custom is intentionally treated as a voucher.
+        if (normalizedVoucherItem.equals("tag_custom")) {
+            return true;
+        }
+
+        // Other NAME_TAG vouchers belong under /wtb tags.
+        if (item.getType() == Material.NAME_TAG) {
+            return false;
+        }
+
+        return !normalizedVoucherItem.startsWith("tag");
     }
 
     public static boolean isTracker(ItemStack item) {
@@ -104,27 +132,23 @@ public final class CustomItemMatchers {
     }
 
     public static boolean isTagItem(ItemStack item) {
-        if (item == null || !item.hasItemMeta()) {
+        if (item == null
+                || item.getType() != Material.NAME_TAG
+                || !item.hasItemMeta()) {
             return false;
         }
 
-        var meta = item.getItemMeta();
+        String voucherItem = item.getItemMeta()
+                .getPersistentDataContainer()
+                .get(
+                        CRAZY_VOUCHER_ITEM,
+                        PersistentDataType.STRING
+                );
 
-        // A renamed Minecraft name tag.
-        if (item.getType() == Material.NAME_TAG
-                && meta.hasDisplayName()) {
-            return true;
-        }
-
-        // A CrazyVouchers voucher that gives a tag.
-        String voucherItem = meta.getPersistentDataContainer().get(
-                CRAZY_VOUCHER_ITEM,
-                PersistentDataType.STRING
-        );
-
+        // Require CrazyVouchers data and reserve Tag_custom
+        // exclusively for the voucher search.
         return voucherItem != null
-                && voucherItem.toLowerCase(Locale.ROOT)
-                .startsWith("tag");
+                && !voucherItem.equalsIgnoreCase("tag_custom");
     }
 
     public static boolean isShulkerBox(ItemStack item) {

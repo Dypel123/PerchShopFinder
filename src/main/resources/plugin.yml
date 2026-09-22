@@ -2,7 +2,7 @@ name: PerchShopFinder
 version: 1.0.0
 main: me.perch.shopfinder.FindItemAddOn
 api-version: 1.20
-authors: [ KayaLambrex ]
+authors: [KayaLambrex, Dypel]
 softdepend:
   - QuickShop
   - QuickShop-Hikari
