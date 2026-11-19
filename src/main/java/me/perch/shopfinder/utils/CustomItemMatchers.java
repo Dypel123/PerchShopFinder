@@ -52,6 +52,15 @@ public final class CustomItemMatchers {
                     Material.CHEST
             );
 
+    private static final Set<String> RANDOM_TRACKER_VOUCHER_IDS = Set.of(
+            "randomtrackercombat",
+            "randomtrackermisc",
+            "randomtrackerresources",
+            "evergreen_randomtrackercombat",
+            "evergreen_randomtrackermisc",
+            "evergreen_randomtrackerresources"
+    );
+
     private CustomItemMatchers() {
     }
 
@@ -85,7 +94,7 @@ public final class CustomItemMatchers {
         String normalizedVoucherItem =
                 voucherItem.toLowerCase(Locale.ROOT);
 
-        if (normalizedVoucherItem.startsWith("randomtracker")) {
+        if (isRandomTrackerVoucherId(voucherItem)) {
             return false;
         }
 
@@ -126,9 +135,14 @@ public final class CustomItemMatchers {
                 PersistentDataType.STRING
         );
 
+        return isRandomTrackerVoucherId(voucherItem);
+    }
+
+    private static boolean isRandomTrackerVoucherId(String voucherItem) {
         return voucherItem != null
-                && voucherItem.toLowerCase(Locale.ROOT)
-                .startsWith("randomtracker");
+                && RANDOM_TRACKER_VOUCHER_IDS.contains(
+                voucherItem.trim().toLowerCase(Locale.ROOT)
+        );
     }
 
     public static boolean isTagItem(ItemStack item) {
